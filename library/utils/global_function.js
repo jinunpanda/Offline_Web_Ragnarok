@@ -154,12 +154,12 @@ mes=(mes, type)=> {
 	let message 			= {};
 	message.mes 			= mes;
 	message.type 			= type;
-	let max_length_chat 	= player.maxChat;
-	let curr_length_chat	= ELEM_SELECTOR_ALL(SELECT.CHAT_CONTAINER + " div").length;
+	let max_length_chat 		= player.maxChat;
+	let curr_length_chat		= ELEM_SELECTOR_ALL(SELECT.CHAT_CONTAINER + " div").length;
 	let child_num 			= ELEM_SELECTOR(SELECT.CHAT_CONTAINER);
 	let chat_container 		= ELEM_SELECTOR_ALL(SELECT.CHAT_CONTAINER);
 	let forms_input 		= document.forms["myForm"]["chat_box"];
-	let types 				= ["self", "event", "lvlup", "error", "normal", "gm", "exp"];
+	let types 			= ["self", "event", "lvlup", "error", "normal", "gm", "exp"];
 
 	try {
 		switch(type) {
