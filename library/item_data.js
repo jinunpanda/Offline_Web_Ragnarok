@@ -4,7 +4,9 @@
  */
 
 item = {
-	// =================== Usable items ===========================
+	// =======================================================
+	// Usable items 
+	// =======================================================
 	[607]: {
 		name: "Yggdrasil Berry",
 		description: "Fruit from the Yggdrasil tree which brings life to our world. Its fantastic taste is full of life. Fully restores HP and SP.",
@@ -26,7 +28,9 @@ item = {
 		weight: 20,
 		type: "usable"
 	},
-	// =================== Equipment items ===========================
+	// =======================================================
+	// Equipment items 
+	// =======================================================
 	[5377]: {
 		name: "Gentlemas's Pipe",
 		description: "A long smoking pipe used by gentlemen and nobility. Decreases damage from Demi-Human monster by 2%.",
@@ -34,7 +38,9 @@ item = {
 		weight: 60,
 		type: "equipment"
 	},
-	// =================== Etc items ===========================
+	// =======================================================
+	// Etc items 
+	// =======================================================
 	[7227]: {
 		name: "TCG Card",
 		description: "Ragnarok Trading Card.",

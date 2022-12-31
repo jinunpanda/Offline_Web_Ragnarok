@@ -30,6 +30,7 @@ var SELECT = {
 	PLAYER_SP_DISPLAY_MAX:  "#sp_max",
 
 	SIT_BUFF: 				".sit_buffs",
+	ZENY: 					"#zeny",
 
 	ANNOUNCEMENT:  			".announcement",
 

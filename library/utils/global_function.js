@@ -7,7 +7,7 @@
  */
 
 /* 
- * 	Savepoint function 
+ *	Saves the player's current position as a savepoint
  */
 function savepoint(x, y) {
 	let savepoint = {x,y};
@@ -117,16 +117,14 @@ function command() {
 			break;
 			case "@command":
 			case "@commands":
-				switch(SELECT.HAS_GM_STATUS) {
-					case "GM-":
-						mes("Showing commands: <br>" +
-							"@item {itemID} {amount}, @teleport/@jump, @clearinventory, @broadcast {Text to Broadcast}" +
-							", @logtouchevent, @commands, @halter/@mount, @time, /where, /sit, /stand, ", "self");
-					break;
-					default:
-						mes("Showing commands: <br>" +
-							"@commands, @halter/@mount, @time, /where, /sit, /stand, ", "self");
-					break;
+				if (SELECT.HAS_GM_STATUS == "GM-" || player.GM_level == true) {
+					mes("Showing commands: <br>" +
+						"@item {itemID} {amount}, @teleport/@jump, @clearinventory, @broadcast {Text to Broadcast}" +
+							", @zeny {amount}, @baselvl {number}, @jobchange {jobID}, @autowalk, @logtouchevent, @commands, @halter/@mount, @time, /where, /sit, /stand, ", "self");
+				}
+				else {
+					mes("Showing commands: <br>" +
+						"@commands, @halter/@mount, @time, /where, /sit, /stand, ", "self");
 				}
 			break;
 			case "/where":
@@ -149,13 +147,11 @@ function command() {
 			break;
 			/* For GM Command or Player */
 			default:
-				switch(SELECT.HAS_GM_STATUS) {
-					case "GM-":
-						gm_commands();
-					break;
-					default:
-						mes(player.name + " : " + forms_input.value, "self");
-					break;
+				if (SELECT.HAS_GM_STATUS == "GM-" || player.GM_level == true) {
+					gm_commands();
+				}
+				else {
+					mes(player.name + " : " + forms_input.value, "self");
 				}
 			break;
 		}
@@ -278,6 +274,7 @@ function onStartMessage() {
 	onStartMessage.init = function() {
 		mes(date, "self");
 		mes("For more information, kindly visit the player_data.js", "lvlup");
+		mes("You can also use @commands for more info.", "lvlup");
 		onStartMessageCounterHandler = setInterval(function() {
 			onStartMessageCounterNum += 1;
 			switch(onStartMessageCounterNum) {
@@ -589,82 +586,6 @@ getitem=(itemIdNum, itemIdAmount)=> {
 	return getitem;
 }
 
-
-
-/* ========================== SKILLS FUNCTION ==================================== */
-var skill = {
-	teleport: {
-		sp_consumption: 100,
-		cooldown: 2 * 1000, // 2 seconds
-	},
-};
-
-function teleport() {
-	let x = Math.floor(Math.random() * map_data.x_limit);
-	let y = Math.floor(Math.random() * map_data.y_limit);
-	/* callback the fadeOut effect */
-	fadeOut_effect();
-	/* Set the position of player */
-	let map = ELEM_SELECTOR(SELECT.MAP);
-	map.style.left = map_data.x_coordinate[x] + "px";
-	map.style.top = map_data.y_coordinate[y] + "px";
-	map.style.transition = "0s";
-
-	/* Set the value of x and y coordinates */
-	walking_x = x;
-	walking_y = y;
-
-	/* Display the value of x and y coordinates on mini-map */
-	let walkingXDisplay = ELEM_SELECTOR(SELECT.WALKING_X_DISPLAY);
-	let walkingYDisplay = ELEM_SELECTOR(SELECT.WALKING_Y_DISPLAY);
-	walkingXDisplay.innerHTML = walking_x;
-	walkingYDisplay.innerHTML = walking_y;
-
-	/* Set the position of mini arrow */
-	let miniArrow = ELEM_SELECTOR(SELECT.MINI_ARROW);
-	miniArrow.style.left = mini_map.x_coordinate[x] + "px";
-	miniArrow.style.top = mini_map.y_coordinate[y] + "px";
-	miniArrow.style.transition = "0s";
-
-	/* Change the image of the player base from his job */
-	idle_change_image();
-	/* Add a message warp status */
-	mes("Warped.", "self");
-	return "You are teleported at " + walking_x + ", " + walking_y + " coordinates.";
-}
-
-function oncast_teleport() {
-	/* append the popup option */
-	$(SELECT.BODY).append(
-		'<div class="window">' +
-			'<div class="box_container_teleport">' +
-				'<div class="box_con_in_border">' +
-					'<div class="box_con_title_teleport">Select an Area to Warp</div>' +
-						'<div class="box_con_option_teleport">' +
-							'<div id="random" class="option_teleport option_teleport_active">Random Area</div>' +
-							'<div id="cancel" class="option_teleport">Cancel</div>' +
-						'</div>' +
-					'<div class="btn_con_teleport">' +
-						'<button class="ok_button">OK</button>' +
-						'<button class="cancel_button">cancel</button>' +
-					'</div>' +
-				'</div>' +
-			'</div>' +
-		'</div>'
-	);
-	/* add a drag feature for the container note: class name of container*/
-	DragThisContainer("box_container_teleport");
-	/* ok button function */
-	$(".ok_button").on("click", function() {
-		$(".window").remove();
-		teleport();
-	});
-	/* cancel button function */
-	$(".cancel_button").on("click", function() {
-		$(".window").remove();
-	});
-}
-
 /* 
  *	Callback for having a touch event for target container
  */
@@ -683,7 +604,7 @@ function DragThisContainer(IdentifyClassName) {
 	  element.addEventListener('touchmove', function(e) {
 	  	var touch = e.touches[0];
 	    if (e.target.className == "inventory_title" || e.target.className == "game_option_con_title" ||
-	    	e.target.className == "box_con_title_teleport") {
+	    	e.target.className == "box_con_title_teleport" || e.target.className == "npc_btn_con" || e.target.className == "npc_con_in_border" || e.target.className == "npc_popup_con") {
 	    	element.style.left = (touch.pageX - deltaX) + 'px';
 	    	element.style.top = (touch.pageY - deltaY) + 'px';
 	    	element.style.opacity = 0.7;
@@ -718,10 +639,11 @@ function autoupdate() {
 	// $(SELECT.PLAYER_EXP_DISPLAY).html("1%"); 
 
 	$(SELECT.PLAYER_HP_DISPLAY).html($(SELECT.PLAYER_HP).val());
-	$(SELECT.PLAYER_HP_DISPLAY_MAX).html($(SELECT.PLAYER_HP_DISPLAY_MAX).html());
+	$(SELECT.PLAYER_HP_DISPLAY_MAX).html($(SELECT.PLAYER_HP).attr("max"));
 
 	$(SELECT.PLAYER_SP_DISPLAY).html($(SELECT.PLAYER_SP).val());
-	$(SELECT.PLAYER_SP_DISPLAY_MAX).html($(SELECT.PLAYER_SP_DISPLAY_MAX).html());
+	$(SELECT.PLAYER_SP_DISPLAY_MAX).html($(SELECT.PLAYER_SP).attr("max"));
+
 
 
 	var prog_more_hp_info = document.getElementById("prog_more_hp_info");
@@ -748,7 +670,7 @@ function autoupdate() {
 		$(SELECT.PROG_MORE_MP_INFO).attr("max", $(SELECT.PLAYER_SP_DISPLAY_MAX).html());
 		mp_percentage.innerHTML = " " + Math.floor(prog_more_mp_info.value/$(SELECT.PLAYER_SP_DISPLAY_MAX).html()*100) + "%";
 		/* for lvl */
-		$(SELECT.MORE_INFO_LVL).html($(SELECT.PLAYER_LVL).html());
+		$(SELECT.MORE_INFO_LVL).html(player.lvl);
 		// for zeny
 		$(SELECT.ZENY).html(player.zeny.toLocaleString());
 
@@ -794,7 +716,6 @@ function AutoUpdateforInventoryData() {
 }
 
 /* ============ THIS IS EXPERIMENTAL CODE ============== */
-
 /* Auto Walk */
 let AutoWalkCounter = 0;
 let AutoWalkCounterHandler;
@@ -821,9 +742,191 @@ function AutoWalk() {
 			touchstart_down();
 			AutoWalkCounter = 0;
 		}
-	},500);
+	},200);
 }
-/* ============ ============================ ============== */
 
 
+/* NPC Conversation Pop Up */
+function NPC_Conversation() {
+	let NPC_Conversation = {}
+
+	NPC_Conversation.init = function(name, mes) {
+		this.name = name;
+		this.mes = mes;
+
+		$("body").append(
+			'<div class="window">' +
+				'<div class="npc_container">' +
+					'<div class="npc_popup_con">' +
+						'<div class="npc_con_in_border">' +
+							'<div id="npc_desc_con" class="npc_desc_con">' + '<div class="npc_name">[ ' + name + ' ]</div>' + mes + '</div>' +
+							'<div class="npc_btn_con">' +
+							'</div>' +
+						'</div>' +
+					'</div>' +
+				'</div>' +
+			'</div>'
+		);
+
+		$(".cancel_button").on("click", function() {
+			$(".window").remove();
+		});
+
+		/* add a drag feature for the container note: class name of container*/
+		DragThisContainer("npc_container");
+	}
+	NPC_Conversation.addClose = function() {
+		$(".npc_btn_con").append('<button class="cancel_button">close</button>');
+		$(".cancel_button").on("click", function() {
+			$(".window").remove();
+		});
+	}
+
+	// ====================== You can delete this later ==============================
+	NPC_Conversation.addMenu = function() {
+		
+	}
+
+	return NPC_Conversation;
+}
+
+// =============================================================
+// GM Command functions
+// =============================================================
+
+/**
+ * Increases the player's base level.
+ * @param {number} lvl - The player's new base level.
+ */
+function baselvl(lvl) {
+	// Convert the lvl argument to an integer
+	lvl = parseInt(lvl);
+
+	// Create a new audio object and set the source to the level up sound
+	let aud = new Audio();
+	aud.src = "sound/levelup.wav";
+
+	// Calculate the HP and SP values based on the player's level
+	var baselvl_hp_data = Math.floor((lvl * hp_data_computation));
+	var baselvl_sp_data = Math.floor((lvl * sp_data_computation));
+	var baselvl_hp_data_max = Math.floor((player.maxLVL * hp_data_computation));
+	var baselvl_sp_data_max = Math.floor((player.maxLVL * sp_data_computation));
+
+	// Get the elements that represent the player's HP and SP
+	const playerHpElement = ELEM_SELECTOR(SELECT.PLAYER_HP);
+	const playerSpElement = ELEM_SELECTOR(SELECT.PLAYER_SP);
+
+	// Check if the player is trying to exceed their maximum level
+	if (lvl > player.maxLVL) {
+		// Set the player's level and weight limit
+		player.lvl = player.maxLVL;
+		player_weight_max = player.maxLVL * player_weight_multiplyer;
+
+		// Play a level up sound
+		aud.play();
+
+		// Set the player's HP and SP values to the maximum values
+		playerHpElement.value = baselvl_hp_data_max;
+		playerHpElement.max = baselvl_hp_data_max;
+		playerSpElement.value = baselvl_sp_data_max;
+		playerSpElement.max = baselvl_sp_data_max;
+
+		// Display a message to the player
+		mes("Congratulation!! You have succesfully level up!", "lvlup");
+	}
+	// Change the player's level
+	else {
+		// Set the player's level and weight limit
+		player.lvl = lvl;
+		player_weight_max = lvl * player_weight_multiplyer;
+
+		// Play a level up sound
+		aud.play();
+
+		// Set the player's HP and SP values to the maximum values
+		playerHpElement.value = baselvl_hp_data;
+		playerHpElement.max = baselvl_hp_data;
+		playerSpElement.value = baselvl_sp_data;
+		playerSpElement.max = baselvl_sp_data;
+
+		// Display a message to the player
+		mes("Congratulation!! You have succesfully level up!", "lvlup");
+	}
+}
+
+/**
+ * Changes the player's job.
+ * @param {number} id - The ID of the new job.
+ */
+function jobchange(id) {
+	// Get the index of the specified job ID in the jobID array
+	let indexJobID = jobID.indexOf(parseInt(id));
+
+	// Check if the player is mounted
+	if (isHalter) {
+		mes("Please remove your mount before proceeding.", "self");
+	}
+	// Check if the specified job ID is valid
+	else if (indexJobID < 0) {
+		mes("@jobchange failed.<br>" +
+			  "Proper used of this command: @jobchange {jobID}<br>" +
+			  "Available jobs:<br>" +
+			  "0=Novice, 1=Swordsman, 7=Knight, 121=Santa Suit, 122=Tuxedo", "self");
+	}
+	// change the player job
+	else {
+		player.job = jobName[indexJobID];
+		idle_change_image();
+		mes("Your job has been changed.", "self");
+	}
+}
+
+/**
+ * Adds zeny to the player.
+ * @param {number} amount - The amount of zeny to add.
+ */
+function zeny(amount) {
+	// Calculate the additional amount of zeny
+	let additional_amount = player.zeny + amount;
+
+	// Check if the amount is greater than the maximum zeny
+	if (amount > player.maxZeny) {
+		player.zeny = player.maxZeny;
+	}
+	// Check if the additional amount would exceed the maximum zeny
+	else if (additional_amount > player.maxZeny) {
+		mes("You are exceeding to your zeny limit.", "self");
+	}
+	// Add the zeny to the player's current zeny
+	else {
+		player.zeny += amount;
+		mes("Current amount of zeny changed.", "self");
+	}
+}
+
+// =============================================================
+// Item Effect functions
+// =============================================================
+
+/**
+ * Fully restores the player's HP and SP.
+ */
+function heal_player_full() {
+	// Create a new audio object and set the source to the heal effect sound
+	let aud = new Audio();
+	aud.src = "sound/_heal_effect.wav";
+
+	// Get the elements that represent the player's HP and SP
+	const playerHpElement = ELEM_SELECTOR(SELECT.PLAYER_HP);
+	const playerSpElement = ELEM_SELECTOR(SELECT.PLAYER_SP);
+
+	// Set the values of the HP and SP elements to the maximum values
+	playerHpElement.value = hp_data;
+	playerHpElement.max = hp_data;
+	playerSpElement.value = sp_data;
+	playerSpElement.max = sp_data;
+
+	// play the heal effect
+ 	aud.play();
+}
 
